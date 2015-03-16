@@ -6,6 +6,8 @@ var os = require('os');
 var debug = require('debug')('amqp-rpc');
 var queueNo = 0;
 
+var noop = function () {};
+
 function Rpc(opt) {
   opt = opt || {};
 
@@ -39,22 +41,17 @@ function Rpc(opt) {
  */
 
 Rpc.prototype.generateQueueName = function (type) {
-  return /*'njsListener:' +*/ os.hostname() + ':pid' + process.pid + ':' + type;
+  return /*'njsListener:' +*/ os.hostname() + ':pid' + process.pid + ':' + type + ':' +
+    Math.random().toString(16).split('.')[1];
 };
 
 
 Rpc.prototype._connect = function (cb) {
-
-  if (!cb) {
-    cb = function () {};
-  }
+  cb = cb || noop;
 
   if (this._conn) {
-
     if (this._connCbs.length > 0) {
-
       this._connCbs.push(cb);
-
       return true;
     }
 
@@ -99,15 +96,10 @@ Rpc.prototype.disconnect = function () {
 };
 
 Rpc.prototype._makeExchange = function (cb) {
-
-  if (!cb) {
-    cb = function () {};
-  }
+  cb = cb || noop;
 
   if (this._exchange) {
-
     if (this._exchangeCbs.length > 0) {
-
       this._exchangeCbs.push(cb);
 
       return true;
@@ -141,10 +133,7 @@ Rpc.prototype._makeExchange = function (cb) {
 };
 
 Rpc.prototype._makeResultsQueue = function (cb) {
-
-  if (!cb) {
-    cb = function () {};
-  }
+  cb = cb || noop;
 
   if (this._resultsQueue) {
     if (this._makeResultsCallback.length > 0) {
