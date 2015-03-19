@@ -330,7 +330,7 @@ Rpc.prototype.on = function (cmd, cb, context, options) {
             );
           }, cmdInfo);
         } else {
-          return cb.call(context, message, null, cmdInfo);
+          return cb.call(context, message, noop, cmdInfo);
         }
       });
 
