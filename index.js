@@ -12,11 +12,11 @@ function noop() {}
 function Rpc(opt) {
   opt = opt || {};
 
-  this._conn = opt.connection ? opt.connection : null;
-  this._url = opt.url ? opt.url : 'amqp://guest:guest@localhost:5672';
-  this._exchange = opt.exchangeInstance ? opt.exchangeInstance : null;
-  this._exchangeName = opt.exchange ? opt.exchange : 'rpc_exchange';
-  this._exchangeOptions = opt.exchangeOptions ? opt.exchangeOptions : {
+  this._conn = opt.connection;
+  this._url = opt.url || 'amqp://guest:guest@localhost:5672';
+  this._exchange = opt.exchangeInstance;
+  this._exchangeName = opt.exchange || 'rpc_exchange';
+  this._exchangeOptions = opt.exchangeOptions || {
     exclusive: false,
     autoDelete: true,
   };
@@ -58,12 +58,10 @@ Rpc.prototype._connect = function(cb) {
   if (!options.url && !options.host) {
     options.url = this._url;
   }
+
   debug('createConnection options=', options,
     ', ipmlOptions=', this._implOptions || {});
-  this._conn = amqp.createConnection(
-    options,
-    this._implOptions
-  );
+  this._conn = amqp.createConnection(options, this._implOptions);
 
   this._conn.on('ready', function() {
     debug('connected to ' + this._conn.serverProperties.product);
@@ -76,9 +74,8 @@ Rpc.prototype._connect = function(cb) {
  */
 Rpc.prototype.disconnect = function() {
   debug('disconnect()');
-  if (!this._conn) {
-    return;
-  }
+  if (!this._conn) return;
+
   this._conn.end();
   this._conn = null;
 };
@@ -175,8 +172,8 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
     this._makeExchange(function() {
       this._makeResultsQueue(function() {
         this._resultsCallback[corrId] = {
-          cb: cb,
-          context: context,
+          cb,
+          context,
           autoDeleteCallback: !!options.autoDeleteCallback,
         };
 
