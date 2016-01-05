@@ -1,13 +1,13 @@
 'use strict';
 
-var amqp = require('amqp');
-var uuid = require('node-uuid').v4;
-var os = require('os');
-var debug = require('debug')('amqp-rpc');
-var queueNo = 0;
-var StateEmitter = require('state-emitter');
+const amqp = require('amqp');
+const uuid = require('node-uuid').v4;
+const os = require('os');
+const debug = require('debug')('amqp-rpc');
+const StateEmitter = require('state-emitter');
 
-var noop = function() {};
+let queueNo = 0;
+function noop() {}
 
 function Rpc(opt) {
   opt = opt || {};
@@ -18,10 +18,10 @@ function Rpc(opt) {
   this._exchangeName = opt.exchange ? opt.exchange : 'rpc_exchange';
   this._exchangeOptions = opt.exchangeOptions ? opt.exchangeOptions : {
     exclusive: false,
-    autoDelete: true
+    autoDelete: true,
   };
   this._implOptions = opt.ipmlOptions || {
-    defaultExchangeName: this._exchangeName
+    defaultExchangeName: this._exchangeName,
   };
   this._connOptions = opt.connOptions || {};
 
@@ -31,7 +31,6 @@ function Rpc(opt) {
 
   this._cmds = {};
 
-
   StateEmitter.call(this);
 }
 
@@ -39,14 +38,14 @@ Rpc.prototype = StateEmitter.prototype;
 
 /**
  * generate unique name for new queue
+ *
  * @returns {string}
  */
 
 Rpc.prototype.generateQueueName = function(type) {
-  return /*'njsListener:' +*/ os.hostname() + ':pid' + process.pid + ':' + type + ':' +
+  return os.hostname() + ':pid' + process.pid + ':' + type + ':' +
     Math.random().toString(16).split('.')[1];
 };
-
 
 Rpc.prototype._connect = function(cb) {
   this.once('connect', cb);
@@ -55,7 +54,7 @@ Rpc.prototype._connect = function(cb) {
     return;
   }
 
-  var options = this._connOptions;
+  let options = this._connOptions;
   if (!options.url && !options.host) {
     options.url = this._url;
   }
@@ -71,10 +70,10 @@ Rpc.prototype._connect = function(cb) {
     this.state('connect', this._conn);
   }.bind(this));
 };
+
 /**
  * disconnect from MQ broker
  */
-
 Rpc.prototype.disconnect = function() {
   debug('disconnect()');
   if (!this._conn) {
@@ -99,7 +98,7 @@ Rpc.prototype._makeExchange = function(cb) {
    *  durable, internal or autodelete value"
    */
   this._exchange = this._conn.exchange(this._exchangeName, {
-    autoDelete: false
+    autoDelete: false,
   }, function(exchange) {
     debug('Exchange ' + exchange.name + ' is open');
     this.state('exchange', this._exchange);
@@ -116,15 +115,12 @@ Rpc.prototype._makeResultsQueue = function(cb) {
   this._resultsQueueName = this.generateQueueName('callback');
 
   this._makeExchange(function() {
-
     this._resultsQueue = this._conn.queue(
       this._resultsQueueName,
       this._exchangeOptions,
       function(queue) {
         debug('Callback queue ' + queue.name + ' is open');
-        queue.subscribe(function() {
-          this._onResult.apply(this, arguments);
-        }.bind(this));
+        queue.subscribe(() => this._onResult.apply(this, arguments));
 
         queue.bind(this._exchange, this._resultsQueueName);
         debug('Bind queue ' + queue.name +
@@ -141,17 +137,9 @@ Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
     return;
   }
 
-  var cb = this._resultsCallback[deliveryInfo.correlationId];
+  let cb = this._resultsCallback[deliveryInfo.correlationId];
 
-  var args = [];
-  if (Array.isArray(message)) {
-
-    for (var i = 0; i < message.length; i++) {
-      args.push(message[i]);
-    }
-  } else {
-    args.push(message);
-  }
+  let args = [].concat(message);
 
   cb.cb.apply(cb.context, args);
 
@@ -162,6 +150,7 @@ Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
 
 /**
  * call a remote command
+ *
  * @param {string} cmd   command name
  * @param {Buffer|Object|String}params    parameters of command
  * @param {function} cb        callback
@@ -175,17 +164,11 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
   options = options || {};
 
   options.contentType = 'application/json';
-  var corrId = options.correlationId || uuid();
+  let corrId = options.correlationId || uuid();
 
   this._connect(function() {
     if (!cb) {
-      this._makeExchange(function() {
-        this._exchange.publish(
-          cmd,
-          params,
-          options
-        );
-      }.bind(this));
+      this._makeExchange(() => this._exchange.publish(cmd, params, options));
       return;
     }
 
@@ -194,7 +177,7 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
         this._resultsCallback[corrId] = {
           cb: cb,
           context: context,
-          autoDeleteCallback: !!options.autoDeleteCallback
+          autoDeleteCallback: !!options.autoDeleteCallback,
         };
 
         options.mandatory = true;
@@ -242,8 +225,6 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
  *                                     can explicitly delete auto-delete queues using the Delete method as normal.
  * @return {boolean}
  */
-
-
 Rpc.prototype.on = function(cmd, cb, context, options) {
   debug('on(), routingKey=%s', cmd);
   if (this._cmds[cmd]) {
@@ -254,20 +235,20 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
   this._connect(function() {
     this._conn.queue(options.queueName || cmd, function(queue) {
       this._cmds[cmd] = {
-        queue: queue
+        queue,
       };
       queue.subscribe(function(message, d, headers, deliveryInfo) {
-        var cmdInfo = {
+        let cmdInfo = {
           cmd: deliveryInfo.routingKey,
           exchange: deliveryInfo.exchange,
           contentType: deliveryInfo.contentType,
-          size: deliveryInfo.size
+          size: deliveryInfo.size,
         };
 
         if (deliveryInfo.correlationId && deliveryInfo.replyTo) {
           return cb.call(context, message, function(err, data) {
-            var options = {
-              correlationId: deliveryInfo.correlationId
+            let options = {
+              correlationId: deliveryInfo.correlationId,
             };
 
             this._exchange.publish(
@@ -276,15 +257,12 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
               options
             );
           }.bind(this), cmdInfo);
-        } else {
-          return cb.call(context, message, noop, cmdInfo);
         }
+
+        return cb.call(context, message, noop, cmdInfo);
       }.bind(this));
 
-      this._makeExchange(function() {
-        queue.bind(this._exchange, cmd);
-      }.bind(this));
-
+      this._makeExchange(() => queue.bind(this._exchange, cmd));
     }.bind(this));
   });
 
@@ -293,18 +271,18 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
 
 /**
  * remove command handler added with "on" method
+ *
  * @param {string} cmd       command or match string
  * @return {boolean}
  */
-
 Rpc.prototype.off = function(cmd) {
   debug('off', cmd);
   if (!this._cmds[cmd]) {
     return false;
   }
 
-  var $this = this;
-  var c = $this._cmds[cmd];
+  let _this = this;
+  let c = _this._cmds[cmd];
 
   function unsubscribe(cb) {
     if (c.ctag) {
@@ -317,21 +295,18 @@ Rpc.prototype.off = function(cmd) {
   }
 
   function unbind(cb) {
-
     if (c.queue) {
       unsubscribe(function() {
-        c.queue.unbind($this._exchange, cmd);
+        c.queue.unbind(_this._exchange, cmd);
 
         if (cb) {
           return cb();
         }
       });
-
     }
   }
 
   function destroy(cb) {
-
     if (c.queue) {
       unbind(function() {
         c.queue.destroy();
@@ -343,62 +318,52 @@ Rpc.prototype.off = function(cmd) {
     }
   }
 
-  destroy(function() {
-    delete $this._cmds[cmd];
-  });
+  destroy(() => delete this._cmds[cmd]);
 
   return true;
 };
 
 /**
  * call broadcast
+ *
  * @param {string} cmd
- * @param params
- * @param options
+ * @param {object} params
+ * @param {object} options
  */
-
-
 Rpc.prototype.callBroadcast = function(cmd, params, options) {
-
-  var $this = this;
-
   options = options || {};
   options.broadcast = true;
   options.autoDeleteCallback = options.ttl ? false : true;
-  var corrId = this.call.call(this, cmd, params, options.onResponse, options.context, options);
+  let corrId = this.call.call(this, cmd, params, options.onResponse, options.context, options);
   if (options.ttl) {
     setTimeout(function() {
       //release cb
-      if ($this._resultsCallback[corrId]) {
-        delete $this._resultsCallback[corrId];
+      if (this._resultsCallback[corrId]) {
+        delete this._resultsCallback[corrId];
       }
       options.onComplete.call(options.context, cmd, options);
-    }, options.ttl);
+    }.bind(this), options.ttl);
   }
 };
 
 /**
  * subscribe to broadcast commands
+ *
  * @param {string} cmd
  * @param {function} cb
  * @param {object} context
  */
-
 Rpc.prototype.onBroadcast = function(cmd, cb, context, options) {
-
   options = options || {};
   options.queueName = this.generateQueueName('broadcast:q' + (queueNo++));
   return this.on.call(this, cmd, cb, context, options);
 };
 
-
 /**
  *
  * @type {Function}
  */
-
 Rpc.prototype.offBroadcast = Rpc.prototype.off;
-
 
 module.exports.amqpRPC = Rpc;
 
