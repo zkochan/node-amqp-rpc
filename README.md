@@ -120,40 +120,42 @@ rpc.onBroadcast('getWorkerStat', function(params, cb)    {
 ```js
 const Qpc = require('qpc');
 
-var rpc = new Qpc({
-    url: "amqp://guest:guest@localhost:5672"
+let rpc = new Qpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
-var all_stats = {};
+let all_stats = {};
 
-//rpc.callBroadcast() is rpc.call() + waiting multiple responses
-//If remote handler without response data, you can use rpc.call() for initiate broadcast calls.
+// rpc.callBroadcast() is rpc.call() + waiting multiple responses
+// If remote handler without response data, you can use rpc.call() for initiate broadcast calls.
 
 rpc.callBroadcast(
-    'getWorkerStat',
-    { type: 'fullStat'},                    //request parameters
-    {                                       //call options
-        ttl: 1000,                          //wait response time  (1 seconds), after run onComplete
-        onResponse: function(err, stat)  {  //callback on each worker response
-            all_stats[ stat.hostname+':'+ stat.pid ] = stat;
-
-        },
-        onComplete: function()  {   //callback on ttl expired
-            console.log('----------------------- WORKER STATISTICS ----------------------------------------');
-            for(var worker in all_stats) {
-                s = all_stats[worker];
-                console.log(worker, '\tuptime=', s.uptime.toFixed(2) + ' seconds', '\tcounter=', s.counter);
-            }
-        }
-    });
-
+  'getWorkerStat',
+  { type: 'fullStat'},                    //request parameters
+  {                                       //call options
+    ttl: 1000,                          //wait response time  (1 seconds), after run onComplete
+    onResponse(err, stat)  {  //callback on each worker response
+      all_stats[stat.hostname + ':' + stat.pid] = stat;
+    },
+    onComplete()  {   //callback on ttl expired
+      console.log('----------------------- WORKER STATISTICS ----------------------------------------');
+      for (let worker in all_stats) {
+        let s = all_stats[worker];
+        console.log(worker, '\tuptime=', s.uptime.toFixed(2) + ' seconds', '\tcounter=', s.counter);
+      }
+    }
+  });
+```
 
 Results for three workers:
-
+```
     ----------------------- WORKER STATISTICS ----------------------------------------
     host1:2612 	uptime= 2470.39 seconds 	counter= 2
     host2:1615 	uptime= 3723.53 seconds 	counter= 8
     host2:2822 	uptime= 2279.16 seconds 	counter= 3
 ```
 
-Eugene Demchenko aka Goldy skype demchenkoe email demchenkoev@gmail.com
+
+## License
+
+MIT
