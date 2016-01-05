@@ -1,24 +1,26 @@
-var os = require('os');
-var worker_name = os.hostname() + ':' + process.pid;
-var counter = 0;
+'use strict';
 
-var rpc = require('../../index').factory({
-    url: "amqp://guest:guest@localhost:5672"
+const os = require('os');
+const workerName = os.hostname() + ':' + process.pid;
+const Rpc = require('../../index');
+
+let counter = 0;
+
+let rpc = new Rpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
 rpc.onBroadcast('getWorkerStat', function(params, cb)    {
-    if(params && params.type == 'fullStat') {
-        cb(null, {
-            pid: process.pid,
-            hostname: os.hostname(),
-            uptime: process.uptime(),
-            counter: counter++
-        });
-    }
-    else {
-        cb(null, { counter: counter++ })
-    }
+  if (params && params.type === 'fullStat') {
+    cb(null, {
+      pid: process.pid,
+      hostname: os.hostname(),
+      uptime: process.uptime(),
+      counter: counter++,
+    });
+    return;
+  }
+  cb(null, { counter: counter++ });
 });
 
-
-rpc.call('log', { worker: worker_name, message: 'worker started' });
+rpc.call('log', { worker: workerName, message: 'worker started' });

@@ -1,32 +1,29 @@
+'use strict';
 
-var rpc = require('../../index').factory({
-  conn_options: { url: "amqp://guest:guest@localhost:5672", heartbeat: 10 }
+const Rpc = require('../../index');
+
+let rpc = new Rpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
-
-rpc.on('inc', function(param, cb){
-    var prevVal = param;
-    var nextVal = param+2;
-    cb(++param, prevVal, nextVal);
+rpc.on('inc', function(param, cb) {
+  let prevVal = param;
+  let nextVal = param + 2;
+  cb(++param, prevVal, nextVal);
 });
 
-rpc.on('say.*', function(param, cb, inf){
+rpc.on('say.*', function(param, cb, inf) {
+  let arr = inf.cmd.split('.');
 
-    var arr = inf.cmd.split('.');
+  let name = (param && param.name) ? param.name : 'world';
 
-    var name = (param && param.name) ? param.name : 'world';
-
-    cb(arr[1] + ' ' + name + '!');
-
+  cb(arr[1] + ' ' + name + '!');
 });
 
 rpc.on('withoutCB', function(param, cb, inf) {
-
-  if(cb){
-    cb('please run function without cb parameter')
+  if (cb) {
+    cb('please run function without cb parameter');
+    return;
   }
-  else{
-    console.log('this is function withoutCB');
-  }
-
+  console.log('this is function withoutCB');
 });

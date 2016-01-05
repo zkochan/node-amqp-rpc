@@ -1,26 +1,38 @@
-var rpc = require('../../index').factory({
-    url: "amqp://guest:guest@localhost:5672"
+'use strict';
+
+const Rpc = require('../../index');
+
+let rpc = new Rpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
-var all_stats = {};
+let allStats = {};
 
-//rpc.callBroadcast() is rpc.call() + waiting multiple responses
-//If remote handler without response data, you can use rpc.call() for initiate broadcast calls.
-
+// rpc.callBroadcast() is rpc.call() + waiting multiple responses
+// If remote handler without response data, you can use rpc.call() for initiate broadcast calls.
 rpc.callBroadcast(
-    'getWorkerStat',
-    { type: 'fullStat'},                    //request parameters
-    {                                       //call options
-        ttl: 1000,                          //wait response time  (1 seconds), after run onComplete
-        onResponse: function(err, stat)  {  //callback on each worker response
-            all_stats[ stat.hostname+':'+ stat.pid ] = stat;
+  'getWorkerStat',
 
-        },
-        onComplete: function()  {   //callback on ttl expired
-            console.log('----------------------- WORKER STATISTICS ----------------------------------------');
-            for(var worker in all_stats) {
-                s = all_stats[worker];
-                console.log(worker, '\tuptime=', s.uptime.toFixed(2) + ' seconds', '\tcounter=', s.counter);
-            }
-        }
-    });
+  // request parameters
+  { type: 'fullStat' },
+
+  // call options
+  {
+    // wait response time  (1 seconds), after run onComplete
+    ttl: 1000,
+
+    // callback on each worker response
+    onResponse(err, stat) {
+      allStats[stat.hostname + ':' + stat.pid] = stat;
+    },
+
+    //callback on ttl expired
+    onComplete() {
+      console.log('----------------------- WORKER STATISTICS ----------------------------------------');
+      for (let worker in allStats) {
+        let s = allStats[worker];
+        console.log(worker, '\tuptime=',
+          s.uptime.toFixed(2) + ' seconds', '\tcounter=', s.counter);
+      }
+    },
+  });
