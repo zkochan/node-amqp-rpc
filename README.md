@@ -1,4 +1,4 @@
-# AMQP-RPC
+# qpc
 
 RPC library based on AMQP protocol.
 
