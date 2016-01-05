@@ -362,8 +362,4 @@ Rpc.prototype.onBroadcast = function(cmd, cb, context, options) {
  */
 Rpc.prototype.offBroadcast = Rpc.prototype.off;
 
-module.exports.amqpRPC = Rpc;
-
-module.exports.factory = function(opt) {
-  return new Rpc(opt);
-};
+module.exports = Rpc;
