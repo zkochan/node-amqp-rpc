@@ -1,16 +1,21 @@
-#AMQP-RPC
+# AMQP-RPC
 
 RPC library based on AMQP protocol.
-Tested with RabbitMQ on the highload project.
 
 
-## Install RabitMQ
+## Install RabbitMQ
 
-    apt-get install rabbitmq-server
+```
+apt-get install rabbitmq-server
+```
+
 
 ## Install library
 
-    npm install amqp-rpc
+```
+npm install qpc
+```
+
 
 ## round-robin
 
@@ -21,36 +26,33 @@ Run multiple servers.js for round-robin shared.
 ### server.js example
 
 ```js
-var rpc = require('amqp-rpc').factory({
-    url: "amqp://guest:guest@localhost:5672"
+const Qpc = require('qpc');
+
+let rpc = new Qpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
-
-rpc.on('inc', function(param, cb){
-    var prevVal = param;
-    var nextVal = param+2;
-    cb(++param, prevVal, nextVal);
+rpc.on('inc', function(param, cb) {
+  let prevVal = param;
+  let nextVal = param + 2;
+  cb(++param, prevVal, nextVal);
 });
 
-rpc.on('say.*', function(param, cb, inf){
+rpc.on('say.*', function(param, cb, inf) {
+  let arr = inf.cmd.split('.');
 
-    var arr = inf.cmd.split('.');
+  let name = (param && param.name) ? param.name : 'world';
 
-    var name = (param && param.name) ? param.name : 'world';
-
-    cb(arr[1] + ' ' + name + '!');
-
+  cb(arr[1] + ' ' + name + '!');
 });
 
 rpc.on('withoutCB', function(param, cb, inf) {
-
-  if(cb){
+  if (cb) {
     cb('please run function without cb parameter')
-  }
-  else{
-    console.log('this is function withoutCB');
+    return;
   }
 
+  console.log('this is function withoutCB');
 });
 ```
 
@@ -58,8 +60,10 @@ rpc.on('withoutCB', function(param, cb, inf) {
 ### client.js example
 
 ```js
-var rpc = require('amqp-rpc').factory({
-  url: "amqp://guest:guest@localhost:5672"
+const Qpc = require('qpc');
+
+let rpc = new Qpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
 rpc.call('inc', 5, function() {
@@ -87,33 +91,36 @@ The core.js must be launched after all worker.js instances.
 ### example/broadcast/worker.js
 
 ```js
-var os = require('os');
-var worker_name = os.hostname() + ':' + process.pid;
-var counter = 0;
+const Qpc = require('qpc');
+const os = require('os');
+let workerName = os.hostname() + ':' + process.pid;
+let counter = 0;
 
-var rpc = require('../../index').factory({
-    url: "amqp://guest:guest@localhost:5672"
+let rpc = new Qpc({
+  url: 'amqp://guest:guest@localhost:5672',
 });
 
 rpc.onBroadcast('getWorkerStat', function(params, cb)    {
-    if(params && params.type == 'fullStat') {
-        cb(null, {
-            pid: process.pid,
-            hostname: os.hostname(),
-            uptime: process.uptime(),
-            counter: counter++
-        });
-    }
-    else {
-        cb(null, { counter: counter++ })
-    }
+  if(params && params.type === 'fullStat') {
+    cb(null, {
+      pid: process.pid,
+      hostname: os.hostname(),
+      uptime: process.uptime(),
+      counter: counter++
+    });
+    return;
+  }
+
+  cb(null, { counter: counter++ });
 });
 ```
 
 ### example/broadcast/core.js
 
 ```js
-var rpc = require('../../index').factory({
+const Qpc = require('qpc');
+
+var rpc = new Qpc({
     url: "amqp://guest:guest@localhost:5672"
 });
 
