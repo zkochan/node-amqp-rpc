@@ -3,8 +3,8 @@
 const amqp = require('amqp');
 const uuid = require('node-uuid').v4;
 const os = require('os');
-const debug = require('debug')('amqp-rpc');
-const StateEmitter = require('state-emitter');
+const debug = require('debug')('qpc');
+const async = require('async');
 
 let queueNo = 0;
 function noop() {}
@@ -31,10 +31,58 @@ function Rpc(opt) {
 
   this._cmds = {};
 
-  StateEmitter.call(this);
-}
+  this._connect = async.memoize(function(cb) {
+    let options = this._connOptions;
+    if (!options.url && !options.host) {
+      options.url = this._url;
+    }
 
-Rpc.prototype = StateEmitter.prototype;
+    debug('createConnection options=', options,
+      ', ipmlOptions=', this._implOptions || {});
+    this._conn = amqp.createConnection(options, this._implOptions);
+
+    this._conn.on('ready', function() {
+      debug('connected to ' + this._conn.serverProperties.product);
+      cb(this._conn);
+    }.bind(this));
+  }.bind(this));
+
+  this._makeExchange = async.memoize(function(cb) {
+    /*
+     * Added option autoDelete=false.
+     * Otherwise we had an error in library node-amqp version > 0.1.7.
+     * Text of such error: "PRECONDITION_FAILED - cannot redeclare
+     *  exchange '<exchange name>' in vhost '/' with different type,
+     *  durable, internal or autodelete value"
+     */
+    this._exchange = this._conn.exchange(this._exchangeName, {
+      autoDelete: false,
+    }, function(exchange) {
+      debug('Exchange ' + exchange.name + ' is open');
+      cb(this._exchange);
+    }.bind(this));
+  }.bind(this));
+
+  this._makeResultsQueue = async.memoize(function(cb) {
+    this._resultsQueueName = this.generateQueueName('callback');
+
+    this._makeExchange(function() {
+      this._resultsQueue = this._conn.queue(
+        this._resultsQueueName,
+        this._exchangeOptions,
+        function(queue) {
+          debug('Callback queue ' + queue.name + ' is open');
+          queue.subscribe(() => this._onResult.apply(this, arguments));
+
+          queue.bind(this._exchange, this._resultsQueueName);
+          debug('Bind queue ' + queue.name +
+            ' to exchange ' + this._exchange.name);
+          cb(queue);
+        }.bind(this)
+      );
+    }.bind(this));
+  }.bind(this));
+}
 
 /**
  * generate unique name for new queue
@@ -47,28 +95,6 @@ Rpc.prototype.generateQueueName = function(type) {
     Math.random().toString(16).split('.')[1];
 };
 
-Rpc.prototype._connect = function(cb) {
-  this.once('connect', cb);
-
-  if (this.getState('connect')) {
-    return;
-  }
-
-  let options = this._connOptions;
-  if (!options.url && !options.host) {
-    options.url = this._url;
-  }
-
-  debug('createConnection options=', options,
-    ', ipmlOptions=', this._implOptions || {});
-  this._conn = amqp.createConnection(options, this._implOptions);
-
-  this._conn.on('ready', function() {
-    debug('connected to ' + this._conn.serverProperties.product);
-    this.state('connect', this._conn);
-  }.bind(this));
-};
-
 /**
  * disconnect from MQ broker
  */
@@ -78,54 +104,6 @@ Rpc.prototype.disconnect = function() {
 
   this._conn.end();
   this._conn = null;
-};
-
-Rpc.prototype._makeExchange = function(cb) {
-  this.once('exchange', cb);
-
-  if (this.getState('exchange')) {
-    return;
-  }
-
-  /*
-   * Added option autoDelete=false.
-   * Otherwise we had an error in library node-amqp version > 0.1.7.
-   * Text of such error: "PRECONDITION_FAILED - cannot redeclare
-   *  exchange '<exchange name>' in vhost '/' with different type,
-   *  durable, internal or autodelete value"
-   */
-  this._exchange = this._conn.exchange(this._exchangeName, {
-    autoDelete: false,
-  }, function(exchange) {
-    debug('Exchange ' + exchange.name + ' is open');
-    this.state('exchange', this._exchange);
-  }.bind(this));
-};
-
-Rpc.prototype._makeResultsQueue = function(cb) {
-  this.once('resultsQueue', cb);
-
-  if (this.getState('resultsQueue')) {
-    return;
-  }
-
-  this._resultsQueueName = this.generateQueueName('callback');
-
-  this._makeExchange(function() {
-    this._resultsQueue = this._conn.queue(
-      this._resultsQueueName,
-      this._exchangeOptions,
-      function(queue) {
-        debug('Callback queue ' + queue.name + ' is open');
-        queue.subscribe(() => this._onResult.apply(this, arguments));
-
-        queue.bind(this._exchange, this._resultsQueueName);
-        debug('Bind queue ' + queue.name +
-          ' to exchange ' + this._exchange.name);
-        this.state('resultsQueue', queue);
-      }.bind(this)
-    );
-  }.bind(this));
 };
 
 Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
@@ -261,7 +239,7 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
 
       this._makeExchange(() => queue.bind(this._exchange, cmd));
     }.bind(this));
-  });
+  }.bind(this));
 
   return true;
 };

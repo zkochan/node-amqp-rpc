@@ -20,9 +20,9 @@
   "licenses": "MIT",
   "dependencies": {
     "amqp": "^0.2.4",
+    "async": "^1.5.1",
     "debug": "^2.2.0",
-    "node-uuid": "^1.4.7",
-    "state-emitter": "^0.3.0"
+    "node-uuid": "^1.4.7"
   },
   "homepage": "https://github.com/rpcjs/qpc"
 }
