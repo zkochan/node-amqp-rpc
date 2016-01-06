@@ -12,6 +12,9 @@
   "files": [
     "index.js"
   ],
+  "scripts": {
+    "test": "mocha test/**/*.js"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/rpcjs/qpc.git"
@@ -27,5 +30,9 @@
     "memoizee": "^0.3.9",
     "node-uuid": "^1.4.7"
   },
-  "homepage": "https://github.com/rpcjs/qpc"
+  "homepage": "https://github.com/rpcjs/qpc",
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4"
+  }
 }
