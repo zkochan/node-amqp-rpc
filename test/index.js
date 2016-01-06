@@ -38,12 +38,14 @@ describe('qpc', function() {
       url: 'amqp://guest:guest@localhost:5672',
     });
 
-    rpc.call('foo2', [1, 2]);
+    rpc.call('foo2', [1, 2]);//, function() {});
 
-    rpc.on('foo2', function(args) {
-      expect(args[0]).to.eq(1);
-      expect(args[1]).to.eq(2);
-      done();
-    });
+    setTimeout(function() {
+      rpc.on('foo2', function(args) {
+        expect(args[0]).to.eq(1);
+        expect(args[1]).to.eq(2);
+        done();
+      });
+    }, 1500);
   });
 });
