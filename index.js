@@ -72,7 +72,9 @@ function Rpc(opt) {
         this._exchangeOptions,
         function(queue) {
           debug('Callback queue ' + queue.name + ' is open');
-          queue.subscribe(() => this._onResult.apply(this, arguments));
+          queue.subscribe(function() {
+            this._onResult(...arguments);
+          }.bind(this));
 
           queue.bind(this._exchange, this._resultsQueueName);
           debug('Bind queue ' + queue.name +
@@ -209,9 +211,7 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
 
   this._connect(function() {
     this._conn.queue(options.queueName || cmd, function(queue) {
-      this._cmds[cmd] = {
-        queue,
-      };
+      this._cmds[cmd] = { queue };
       queue.subscribe(function(message, d, headers, deliveryInfo) {
         let cmdInfo = {
           cmd: deliveryInfo.routingKey,
