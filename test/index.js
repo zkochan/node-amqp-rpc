@@ -32,4 +32,18 @@ describe('qpc', function() {
       done();
     });
   });
+
+  it('should recieve message when subscribe after publish', function(done) {
+    let rpc = new Qpc({
+      url: 'amqp://guest:guest@localhost:5672',
+    });
+
+    rpc.call('foo2', [1, 2]);
+
+    rpc.on('foo2', function(args) {
+      expect(args[0]).to.eq(1);
+      expect(args[1]).to.eq(2);
+      done();
+    });
+  });
 });
