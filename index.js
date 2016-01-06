@@ -6,7 +6,6 @@ const os = require('os');
 const debug = require('debug')('qpc');
 const memoize = require('memoizee');
 
-let queueNo = 0;
 function noop() {}
 
 function Rpc(opt) {
@@ -293,47 +292,5 @@ Rpc.prototype.off = function(cmd) {
 
   return true;
 };
-
-/**
- * call broadcast
- *
- * @param {string} cmd
- * @param {object} params
- * @param {object} options
- */
-Rpc.prototype.callBroadcast = function(cmd, params, options) {
-  options = options || {};
-  options.broadcast = true;
-  options.autoDeleteCallback = options.ttl ? false : true;
-  let corrId = this.call.call(this, cmd, params, options.onResponse, options.context, options);
-  if (options.ttl) {
-    setTimeout(() => {
-      //release cb
-      if (this._resultsCallback[corrId]) {
-        delete this._resultsCallback[corrId];
-      }
-      options.onComplete.call(options.context, cmd, options);
-    }, options.ttl);
-  }
-};
-
-/**
- * subscribe to broadcast commands
- *
- * @param {string} cmd
- * @param {function} cb
- * @param {object} context
- */
-Rpc.prototype.onBroadcast = function(cmd, cb, context, options) {
-  options = options || {};
-  options.queueName = this.generateQueueName('broadcast:q' + (queueNo++));
-  return this.on.call(this, cmd, cb, context, options);
-};
-
-/**
- *
- * @type {Function}
- */
-Rpc.prototype.offBroadcast = Rpc.prototype.off;
 
 module.exports = Rpc;
