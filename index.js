@@ -176,8 +176,7 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
 Rpc.prototype._createQ = memoize(function(qname, cb) {
   this._connect(() => this._conn.queue(qname, queue => {
     this._makeExchange(() => {
-      queue.bind(this._exchange, qname);
-      cb(queue);
+      queue.bind(this._exchange, qname, () => cb(queue));
     });
   }));
 }, { async: true });
