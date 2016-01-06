@@ -143,7 +143,7 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
 
   this._connect(() => {
     if (!cb) {
-      this._makeExchange(() => this._exchange.publish(cmd, params, options));
+      this._createQ(cmd, () => this._exchange.publish(cmd, params, options));
       return;
     }
 
@@ -174,6 +174,15 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
   return corrId;
 };
 
+Rpc.prototype._createQ = memoize(function(qname, cb) {
+  this._connect(() => this._conn.queue(qname, queue => {
+    this._makeExchange(() => {
+      queue.bind(this._exchange, qname);
+      cb(queue);
+    });
+  }));
+}, { async: true });
+
 /**
  * add new command handler
  * @param {string} cmd                command name or match string
@@ -200,39 +209,34 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
   if (this._cmds[cmd]) {
     return false;
   }
-  options = options || {};
 
-  this._connect(() =>
-    this._conn.queue(options.queueName || cmd, queue => {
-      this._cmds[cmd] = { queue };
-      queue.subscribe((message, d, headers, deliveryInfo) => {
-        let cmdInfo = {
-          cmd: deliveryInfo.routingKey,
-          exchange: deliveryInfo.exchange,
-          contentType: deliveryInfo.contentType,
-          size: deliveryInfo.size,
-        };
+  this._createQ(cmd, queue => {
+    this._cmds[cmd] = { queue };
+    queue.subscribe((message, d, headers, deliveryInfo) => {
+      let cmdInfo = {
+        cmd: deliveryInfo.routingKey,
+        exchange: deliveryInfo.exchange,
+        contentType: deliveryInfo.contentType,
+        size: deliveryInfo.size,
+      };
 
-        if (deliveryInfo.correlationId && deliveryInfo.replyTo) {
-          return cb.call(context, message, function(err, data) {
-            let options = {
-              correlationId: deliveryInfo.correlationId,
-            };
+      if (deliveryInfo.correlationId && deliveryInfo.replyTo) {
+        return cb.call(context, message, function(err, data) {
+          let options = {
+            correlationId: deliveryInfo.correlationId,
+          };
 
-            this._exchange.publish(
-              deliveryInfo.replyTo,
-              Array.prototype.slice.call(arguments),
-              options
-            );
-          }.bind(this), cmdInfo);
-        }
+          this._exchange.publish(
+            deliveryInfo.replyTo,
+            Array.prototype.slice.call(arguments),
+            options
+          );
+        }.bind(this), cmdInfo);
+      }
 
-        return cb.call(context, message, noop, cmdInfo);
-      });
-
-      this._makeExchange(() => queue.bind(this._exchange, cmd));
-    })
-  );
+      return cb.call(context, message, noop, cmdInfo);
+    });
+  });
 
   return true;
 };
