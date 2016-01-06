@@ -4,7 +4,7 @@ const amqp = require('amqp');
 const uuid = require('node-uuid').v4;
 const os = require('os');
 const debug = require('debug')('qpc');
-const async = require('async');
+const memoize = require('memoizee');
 
 let queueNo = 0;
 function noop() {}
@@ -30,61 +30,61 @@ function Rpc(opt) {
   this._resultsCallback = {};
 
   this._cmds = {};
-
-  this._connect = async.memoize(function(cb) {
-    let options = this._connOptions;
-    if (!options.url && !options.host) {
-      options.url = this._url;
-    }
-
-    debug('createConnection options=', options,
-      ', ipmlOptions=', this._implOptions || {});
-    this._conn = amqp.createConnection(options, this._implOptions);
-
-    this._conn.on('ready', function() {
-      debug('connected to ' + this._conn.serverProperties.product);
-      cb(this._conn);
-    }.bind(this));
-  }.bind(this));
-
-  this._makeExchange = async.memoize(function(cb) {
-    /*
-     * Added option autoDelete=false.
-     * Otherwise we had an error in library node-amqp version > 0.1.7.
-     * Text of such error: "PRECONDITION_FAILED - cannot redeclare
-     *  exchange '<exchange name>' in vhost '/' with different type,
-     *  durable, internal or autodelete value"
-     */
-    this._exchange = this._conn.exchange(this._exchangeName, {
-      autoDelete: false,
-    }, function(exchange) {
-      debug('Exchange ' + exchange.name + ' is open');
-      cb(this._exchange);
-    }.bind(this));
-  }.bind(this));
-
-  this._makeResultsQueue = async.memoize(function(cb) {
-    this._resultsQueueName = this.generateQueueName('callback');
-
-    this._makeExchange(function() {
-      this._resultsQueue = this._conn.queue(
-        this._resultsQueueName,
-        this._exchangeOptions,
-        function(queue) {
-          debug('Callback queue ' + queue.name + ' is open');
-          queue.subscribe(function() {
-            this._onResult(...arguments);
-          }.bind(this));
-
-          queue.bind(this._exchange, this._resultsQueueName);
-          debug('Bind queue ' + queue.name +
-            ' to exchange ' + this._exchange.name);
-          cb(queue);
-        }.bind(this)
-      );
-    }.bind(this));
-  }.bind(this));
 }
+
+Rpc.prototype._connect = memoize(function(cb) {
+  let options = this._connOptions;
+  if (!options.url && !options.host) {
+    options.url = this._url;
+  }
+
+  debug('createConnection options=', options,
+    ', ipmlOptions=', this._implOptions || {});
+  this._conn = amqp.createConnection(options, this._implOptions);
+
+  this._conn.on('ready', function() {
+    debug('connected to ' + this._conn.serverProperties.product);
+    cb(this._conn);
+  }.bind(this));
+}, { async: true });
+
+Rpc.prototype._makeExchange = memoize(function(cb) {
+  /*
+   * Added option autoDelete=false.
+   * Otherwise we had an error in library node-amqp version > 0.1.7.
+   * Text of such error: "PRECONDITION_FAILED - cannot redeclare
+   *  exchange '<exchange name>' in vhost '/' with different type,
+   *  durable, internal or autodelete value"
+   */
+  this._exchange = this._conn.exchange(this._exchangeName, {
+    autoDelete: false,
+  }, function(exchange) {
+    debug('Exchange ' + exchange.name + ' is open');
+    cb(this._exchange);
+  }.bind(this));
+}, { async: true });
+
+Rpc.prototype._makeResultsQueue = memoize(function(cb) {
+  this._resultsQueueName = this.generateQueueName('callback');
+
+  this._makeExchange(function() {
+    this._resultsQueue = this._conn.queue(
+      this._resultsQueueName,
+      this._exchangeOptions,
+      function(queue) {
+        debug('Callback queue ' + queue.name + ' is open');
+        queue.subscribe(function() {
+          this._onResult(...arguments);
+        }.bind(this));
+
+        queue.bind(this._exchange, this._resultsQueueName);
+        debug('Bind queue ' + queue.name +
+          ' to exchange ' + this._exchange.name);
+        cb(queue);
+      }.bind(this)
+    );
+  }.bind(this));
+}, { async: true });
 
 /**
  * generate unique name for new queue
