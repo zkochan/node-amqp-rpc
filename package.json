@@ -9,6 +9,9 @@
   "author": {
     "name": "Zoltan Kochan"
   },
+  "files": [
+    "index.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/rpcjs/qpc.git"

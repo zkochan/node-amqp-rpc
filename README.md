@@ -2,6 +2,10 @@
 
 RPC library based on AMQP protocol.
 
+[![Dependency Status](https://david-dm.org/rpcjs/qpc/status.svg?style=flat)](https://david-dm.org/rpcjs/qpc)
+[![Build Status](https://travis-ci.org/rpcjs/qpc.svg?branch=master)](https://travis-ci.org/rpcjs/qpc)
+[![npm version](https://badge.fury.io/js/qpc.svg)](http://badge.fury.io/js/qpc)
+
 
 ## Install RabbitMQ
 
