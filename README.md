@@ -30,59 +30,59 @@ Run multiple servers.js for round-robin shared.
 ### server.js example
 
 ```js
-const Qpc = require('qpc');
+const Qpc = require('qpc')
 
 let rpc = new Qpc({
   url: 'amqp://guest:guest@localhost:5672',
-});
+})
 
 rpc.on('inc', function(param, cb) {
-  let prevVal = param;
-  let nextVal = param + 2;
-  cb(++param, prevVal, nextVal);
-});
+  let prevVal = param
+  let nextVal = param + 2
+  cb(++param, prevVal, nextVal)
+})
 
 rpc.on('say.*', function(param, cb, inf) {
-  let arr = inf.cmd.split('.');
+  let arr = inf.cmd.split('.')
 
-  let name = (param && param.name) ? param.name : 'world';
+  let name = (param && param.name) ? param.name : 'world'
 
-  cb(arr[1] + ' ' + name + '!');
-});
+  cb(arr[1] + ' ' + name + '!')
+})
 
 rpc.on('withoutCB', function(param, cb, inf) {
   if (cb) {
     cb('please run function without cb parameter')
-    return;
+    return
   }
 
-  console.log('this is function withoutCB');
-});
+  console.log('this is function withoutCB')
+})
 ```
 
 
 ### client.js example
 
 ```js
-const Qpc = require('qpc');
+const Qpc = require('qpc')
 
 let rpc = new Qpc({
   url: 'amqp://guest:guest@localhost:5672',
-});
+})
 
 rpc.call('inc', 5, function() {
-  console.log('results of inc:', arguments);  //output: [6,4,7]
-});
+  console.log('results of inc:', arguments)  //output: [6,4,7]
+})
 
 rpc.call('say.Hello', { name: 'John' }, function(msg) {
-  console.log('results of say.Hello:', msg);  //output: Hello John!
-});
+  console.log('results of say.Hello:', msg)  //output: Hello John!
+})
 
 rpc.call('withoutCB', {}, function(msg) {
-  console.log('withoutCB results:', msg);  //output: please run function without cb parameter
-});
+  console.log('withoutCB results:', msg)  //output: please run function without cb parameter
+})
 
-rpc.call('withoutCB', {}); //output message on server side console
+rpc.call('withoutCB', {}) //output message on server side console
 ```
 
 

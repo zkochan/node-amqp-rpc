@@ -1,51 +1,51 @@
-'use strict';
+'use strict'
 
-const expect = require('chai').expect;
-const Qpc = require('../');
+const expect = require('chai').expect
+const Qpc = require('../')
 
 describe('qpc', function() {
   it('should send/recieve message', function(done) {
     let rpc = new Qpc({
       url: 'amqp://guest:guest@localhost:5672',
-    });
+    })
 
     rpc.on('foo', function(args) {
-      expect(args[0]).to.eq(1);
-      expect(args[1]).to.eq(2);
-      done();
-    });
+      expect(args[0]).to.eq(1)
+      expect(args[1]).to.eq(2)
+      done()
+    })
 
-    rpc.call('foo', [1, 2]);
-  });
+    rpc.call('foo', [1, 2])
+  })
 
   it('should send response', function(done) {
     let rpc = new Qpc({
       url: 'amqp://guest:guest@localhost:5672',
-    });
+    })
 
     rpc.on('sum', function(args, cb) {
-      cb(args[0] + args[1]);
-    });
+      cb(args[0] + args[1])
+    })
 
     rpc.call('sum', [1, 2], function(res) {
-      expect(res).to.eq(3);
-      done();
-    });
-  });
+      expect(res).to.eq(3)
+      done()
+    })
+  })
 
   it('should recieve message when subscribe after publish', function(done) {
     let rpc = new Qpc({
       url: 'amqp://guest:guest@localhost:5672',
-    });
+    })
 
-    rpc.call('foo2', [1, 2]);//, function() {});
+    rpc.call('foo2', [1, 2])
 
     setTimeout(function() {
       rpc.on('foo2', function(args) {
-        expect(args[0]).to.eq(1);
-        expect(args[1]).to.eq(2);
-        done();
-      });
-    }, 1500);
-  });
-});
+        expect(args[0]).to.eq(1)
+        expect(args[1]).to.eq(2)
+        done()
+      })
+    }, 1500)
+  })
+})
