@@ -115,11 +115,9 @@ Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
 
   let args = [].concat(message)
 
-  cb.cb(...args)
+  cb(...args)
 
-  if (cb.autoDeleteCallback !== false) {
-    delete this._resultsCallback[deliveryInfo.correlationId]
-  }
+  delete this._resultsCallback[deliveryInfo.correlationId]
 }
 
 /**
@@ -146,10 +144,7 @@ Rpc.prototype.call = function(cmd, params, cb, options) {
 
     this._makeExchange(() =>
       this._makeResultsQueue(() => {
-        this._resultsCallback[corrId] = {
-          cb,
-          autoDeleteCallback: !!options.autoDeleteCallback,
-        }
+        this._resultsCallback[corrId] = cb
 
         options.mandatory = true
         options.replyTo = this._resultsQueueName
