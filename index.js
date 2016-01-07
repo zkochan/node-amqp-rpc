@@ -115,7 +115,7 @@ Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
 
   let args = [].concat(message)
 
-  cb.cb.apply(cb.context, args)
+  cb.cb(...args)
 
   if (cb.autoDeleteCallback !== false) {
     delete this._resultsCallback[deliveryInfo.correlationId]
@@ -128,11 +128,9 @@ Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
  * @param {string} cmd   command name
  * @param {Buffer|Object|String}params    parameters of command
  * @param {function} cb        callback
- * @param {object} context   context of callback
  * @param {object} options   advanced options of amqp
  */
-
-Rpc.prototype.call = function(cmd, params, cb, context, options) {
+Rpc.prototype.call = function(cmd, params, cb, options) {
   debug('call()', cmd)
 
   options = options || {}
@@ -150,7 +148,6 @@ Rpc.prototype.call = function(cmd, params, cb, context, options) {
       this._makeResultsQueue(() => {
         this._resultsCallback[corrId] = {
           cb,
-          context,
           autoDeleteCallback: !!options.autoDeleteCallback,
         }
 
@@ -185,7 +182,6 @@ Rpc.prototype._createQ = memoize(function(qname, cb) {
  * add new command handler
  * @param {string} cmd                command name or match string
  * @param {function} cb               handler
- * @param {object} context            context for handler
  * @param {object} options            advanced options
  * @param {string} options.queueName  name of queue. Default equal to "cmd" parameter
  * @param {boolean} options.durable   If true, the queue will be marked as durable.
@@ -202,7 +198,7 @@ Rpc.prototype._createQ = memoize(function(qname, cb) {
  *                                     can explicitly delete auto-delete queues using the Delete method as normal.
  * @return {boolean}
  */
-Rpc.prototype.on = function(cmd, cb, context, options) {
+Rpc.prototype.on = function(cmd, cb, options) {
   debug('on(), routingKey=%s', cmd)
   if (this._cmds[cmd]) {
     return false
@@ -219,7 +215,7 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
       }
 
       if (deliveryInfo.correlationId && deliveryInfo.replyTo) {
-        return cb.call(context, message, function(err, data) {
+        return cb(message, function() {
           let options = {
             correlationId: deliveryInfo.correlationId,
           }
@@ -232,7 +228,7 @@ Rpc.prototype.on = function(cmd, cb, context, options) {
         }.bind(this), cmdInfo)
       }
 
-      return cb.call(context, message, noop, cmdInfo)
+      return cb(message, noop, cmdInfo)
     })
   })
 
