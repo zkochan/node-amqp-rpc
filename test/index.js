@@ -33,6 +33,18 @@ describe('qpc', function() {
     })
   })
 
+  it('should respond with an error in case of timout', function(done) {
+    let rpc = new Qpc({
+      url: 'amqp://guest:guest@localhost:5672',
+      ttl: 100,
+    })
+
+    rpc.call('timeout', [1, 2], function(res) {
+      expect(res).to.be.instanceOf(Error)
+      done()
+    })
+  })
+
   it('should recieve message when subscribe after publish', function(done) {
     let rpc = new Qpc({
       url: 'amqp://guest:guest@localhost:5672',
