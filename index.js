@@ -5,6 +5,7 @@ const uuid = require('node-uuid').v4
 const os = require('os')
 const debug = require('debug')('qpc')
 const memoize = require('memoizee')
+const CallbackStore = require('callback-store')
 
 function noop() {}
 
@@ -26,7 +27,8 @@ function Rpc(opt) {
 
   this._resultsQueue = null
   this._resultsQueueName = null
-  this._resultsCallback = {}
+  this._callbacks = new CallbackStore()
+  this._ttl = opt.ttl || 5e3 // 5 seconds
 
   this._cmds = {}
 
@@ -107,17 +109,12 @@ Rpc.prototype.disconnect = function() {
 
 Rpc.prototype._onResult = function(message, headers, deliveryInfo) {
   debug('_onResult()')
-  if (!this._resultsCallback[deliveryInfo.correlationId]) {
-    return
-  }
-
-  let cb = this._resultsCallback[deliveryInfo.correlationId]
+  let cb = this._callbacks.get(deliveryInfo.correlationId)
+  if (!cb) return
 
   let args = [].concat(message)
 
-  cb(...args)
-
-  delete this._resultsCallback[deliveryInfo.correlationId]
+  cb.apply(null, args)
 }
 
 /**
@@ -132,9 +129,7 @@ Rpc.prototype.call = function(cmd, params, cb, options) {
   debug('call()', cmd)
 
   options = options || {}
-
   options.contentType = 'application/json'
-  let corrId = options.correlationId || uuid()
 
   this._connect(() => {
     if (!cb) {
@@ -144,7 +139,8 @@ Rpc.prototype.call = function(cmd, params, cb, options) {
 
     this._makeExchange(() =>
       this._makeResultsQueue(() => {
-        this._resultsCallback[corrId] = cb
+        let corrId = uuid()
+        this._callbacks.add(corrId, cb, this._ttl)
 
         options.mandatory = true
         options.replyTo = this._resultsQueueName
@@ -153,16 +149,13 @@ Rpc.prototype.call = function(cmd, params, cb, options) {
 
         this._exchange.publish(cmd, params, options, err => {
           if (err) {
-            delete this._resultsCallback[corrId]
-
+            let cb = this._callbacks.get(corrId)
             cb(err)
           }
         })
       })
     )
   })
-
-  return corrId
 }
 
 Rpc.prototype._createQ = memoize(function(qname, cb) {
