@@ -10,7 +10,8 @@
     "name": "Zoltan Kochan"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "lib"
   ],
   "scripts": {
     "test": "mocha test/**/*.js",

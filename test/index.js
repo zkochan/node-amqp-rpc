@@ -1,20 +1,19 @@
 'use strict'
 const expect = require('chai').expect
-const consumer = require('../lib/consumer')
-const publisher = require('../lib/publisher')
+const qpc = require('..')
 
 describe('qpc', function() {
   let con
   let pub
 
   beforeEach(function(done) {
-    consumer({
+    qpc.consumer({
       amqpURL: 'amqp://guest:guest@localhost:5672',
       exchangeName: 'foo',
     })
     .then(con$ => {
       con = con$
-      return publisher({
+      return qpc.publisher({
         amqpURL: 'amqp://guest:guest@localhost:5672',
         exchangeName: 'foo',
       })
@@ -46,7 +45,7 @@ describe('qpc', function() {
   })
 
   it('should respond with an error in case of timout', function(done) {
-    return publisher({
+    return qpc.publisher({
       url: 'amqp://guest:guest@localhost:5672',
       exchangeName: 'foo',
       ttl: 100,
