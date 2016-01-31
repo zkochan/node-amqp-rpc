@@ -1,55 +1,69 @@
 'use strict'
-
 const expect = require('chai').expect
-const qpc = require('..')
+const consumer = require('../lib/consumer')
+const publisher = require('../lib/publisher')
 
 describe('qpc', function() {
-  let rpc
+  let con
+  let pub
 
-  beforeEach(function() {
-    rpc = qpc({
-      url: 'amqp://guest:guest@localhost:5672',
+  beforeEach(function(done) {
+    consumer({
+      amqpURL: 'amqp://guest:guest@localhost:5672',
+      exchangeName: 'foo',
     })
+    .then(con$ => {
+      con = con$
+      return publisher({
+        amqpURL: 'amqp://guest:guest@localhost:5672',
+        exchangeName: 'foo',
+      })
+    })
+    .then(pub$ => {
+      pub = pub$
+      done()
+    })
+    .catch(done)
   })
 
   it('should send/recieve message', function(done) {
-    rpc.on('foo', function(args) {
+    con.on('foo', args => {
       expect(args[0]).to.eq(1)
       expect(args[1]).to.eq(2)
       done()
     })
 
-    rpc.call('foo', [1, 2])
+    pub.call('foo', [1, 2])
   })
 
   it('should send response', function(done) {
-    rpc.on('sum', function(args, cb) {
-      cb(args[0] + args[1])
-    })
+    con.on('sum', (args, cb) => cb(args[0] + args[1]))
 
-    rpc.call('sum', [1, 2], function(res) {
+    pub.call('sum', [1, 2], res => {
       expect(res).to.eq(3)
       done()
     })
   })
 
   it('should respond with an error in case of timout', function(done) {
-    let rpc = qpc({
+    return publisher({
       url: 'amqp://guest:guest@localhost:5672',
+      exchangeName: 'foo',
       ttl: 100,
     })
-
-    rpc.call('timeout', [1, 2], function(res) {
-      expect(res).to.be.instanceOf(Error)
-      done()
+    .then(pub => {
+      pub.call('timeout', [1, 2], res => {
+        expect(res).to.be.instanceOf(Error)
+        done()
+      })
     })
   })
 
   it('should recieve message when subscribe after publish', function(done) {
-    rpc.call('foo2', [1, 2])
+    pub.call('foo2', [1, 2])
 
     setTimeout(function() {
-      rpc.on('foo2', function(args) {
+      con.on('foo2', args => {
         expect(args[0]).to.eq(1)
         expect(args[1]).to.eq(2)
         done()

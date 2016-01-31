@@ -33,31 +33,32 @@ Run multiple servers.js for round-robin shared.
 ```js
 const qpc = require('qpc')
 
-let rpc = qpc({
+qpc.consumer({
   url: 'amqp://guest:guest@localhost:5672',
 })
+.then(consumer => {
+  consumer.on('inc', function(param, cb) {
+    let prevVal = param
+    let nextVal = param + 2
+    cb(++param, prevVal, nextVal)
+  })
 
-rpc.on('inc', function(param, cb) {
-  let prevVal = param
-  let nextVal = param + 2
-  cb(++param, prevVal, nextVal)
-})
+  consumer.on('say.*', function(param, cb, inf) {
+    let arr = inf.cmd.split('.')
 
-rpc.on('say.*', function(param, cb, inf) {
-  let arr = inf.cmd.split('.')
+    let name = (param && param.name) ? param.name : 'world'
 
-  let name = (param && param.name) ? param.name : 'world'
+    cb(arr[1] + ' ' + name + '!')
+  })
 
-  cb(arr[1] + ' ' + name + '!')
-})
+  consumer.on('withoutCB', function(param, cb, inf) {
+    if (cb) {
+      cb('please run function without cb parameter')
+      return
+    }
 
-rpc.on('withoutCB', function(param, cb, inf) {
-  if (cb) {
-    cb('please run function without cb parameter')
-    return
-  }
-
-  console.log('this is function withoutCB')
+    console.log('this is function withoutCB')
+  })
 })
 ```
 
@@ -67,23 +68,24 @@ rpc.on('withoutCB', function(param, cb, inf) {
 ```js
 const qpc = require('qpc')
 
-let rpc = qpc({
+qpc.publisher({
   url: 'amqp://guest:guest@localhost:5672',
 })
+.then(publisher => {
+  publisher.call('inc', 5, function() {
+    console.log('results of inc:', arguments)  //output: [6,4,7]
+  })
 
-rpc.call('inc', 5, function() {
-  console.log('results of inc:', arguments)  //output: [6,4,7]
+  publisher.call('say.Hello', { name: 'John' }, function(msg) {
+    console.log('results of say.Hello:', msg)  //output: Hello John!
+  })
+
+  publisher.call('withoutCB', {}, function(msg) {
+    console.log('withoutCB results:', msg)  //output: please run function without cb parameter
+  })
+
+  publisher.call('withoutCB', {}) //output message on server side console
 })
-
-rpc.call('say.Hello', { name: 'John' }, function(msg) {
-  console.log('results of say.Hello:', msg)  //output: Hello John!
-})
-
-rpc.call('withoutCB', {}, function(msg) {
-  console.log('withoutCB results:', msg)  //output: please run function without cb parameter
-})
-
-rpc.call('withoutCB', {}) //output message on server side console
 ```
 
 
