@@ -30,9 +30,9 @@ Run multiple servers.js for round-robin shared.
 ### server.js example
 
 ```js
-const Qpc = require('qpc')
+const qpc = require('qpc')
 
-let rpc = new Qpc({
+let rpc = qpc({
   url: 'amqp://guest:guest@localhost:5672',
 })
 
@@ -64,9 +64,9 @@ rpc.on('withoutCB', function(param, cb, inf) {
 ### client.js example
 
 ```js
-const Qpc = require('qpc')
+const qpc = require('qpc')
 
-let rpc = new Qpc({
+let rpc = qpc({
   url: 'amqp://guest:guest@localhost:5672',
 })
 

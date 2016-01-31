@@ -1,14 +1,18 @@
 'use strict'
 
 const expect = require('chai').expect
-const Qpc = require('../')
+const qpc = require('..')
 
 describe('qpc', function() {
-  it('should send/recieve message', function(done) {
-    let rpc = new Qpc({
+  let rpc
+
+  beforeEach(function() {
+    rpc = qpc({
       url: 'amqp://guest:guest@localhost:5672',
     })
+  })
 
+  it('should send/recieve message', function(done) {
     rpc.on('foo', function(args) {
       expect(args[0]).to.eq(1)
       expect(args[1]).to.eq(2)
@@ -19,10 +23,6 @@ describe('qpc', function() {
   })
 
   it('should send response', function(done) {
-    let rpc = new Qpc({
-      url: 'amqp://guest:guest@localhost:5672',
-    })
-
     rpc.on('sum', function(args, cb) {
       cb(args[0] + args[1])
     })
@@ -34,7 +34,7 @@ describe('qpc', function() {
   })
 
   it('should respond with an error in case of timout', function(done) {
-    let rpc = new Qpc({
+    let rpc = qpc({
       url: 'amqp://guest:guest@localhost:5672',
       ttl: 100,
     })
@@ -46,10 +46,6 @@ describe('qpc', function() {
   })
 
   it('should recieve message when subscribe after publish', function(done) {
-    let rpc = new Qpc({
-      url: 'amqp://guest:guest@localhost:5672',
-    })
-
     rpc.call('foo2', [1, 2])
 
     setTimeout(function() {

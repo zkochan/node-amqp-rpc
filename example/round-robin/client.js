@@ -1,8 +1,8 @@
 'use strict'
 
-const Rpc = require('../../index')
+const qpc = require('../..')
 
-let rpc = new Rpc({
+let rpc = qpc({
   url: 'amqp://guest:guest@localhost:5672',
 })
 
