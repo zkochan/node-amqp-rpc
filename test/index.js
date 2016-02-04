@@ -8,13 +8,13 @@ describe('qpc', function() {
 
   beforeEach(function(done) {
     qpc.consumer({
-      amqpURL: 'amqp://guest:guest@localhost:5672',
+      uri: 'amqp://guest:guest@localhost:5672',
       exchangeName: 'foo',
     })
     .then(con$ => {
       con = con$
       return qpc.publisher({
-        amqpURL: 'amqp://guest:guest@localhost:5672',
+        uri: 'amqp://guest:guest@localhost:5672',
         exchangeName: 'foo',
       })
     })

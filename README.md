@@ -34,7 +34,7 @@ Run multiple servers.js for round-robin shared.
 const qpc = require('qpc')
 
 qpc.consumer({
-  url: 'amqp://guest:guest@localhost:5672',
+  uri: 'amqp://guest:guest@localhost:5672',
 })
 .then(consumer => {
   consumer.on('inc', function(param, cb) {
@@ -69,7 +69,7 @@ qpc.consumer({
 const qpc = require('qpc')
 
 qpc.publisher({
-  url: 'amqp://guest:guest@localhost:5672',
+  uri: 'amqp://guest:guest@localhost:5672',
 })
 .then(publisher => {
   publisher.call('inc', 5, function() {
