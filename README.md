@@ -28,7 +28,7 @@ Example: Call remote function.
 Run multiple servers.js for round-robin shared.
 
 
-### server.js example
+### `server.js` example
 
 ```js
 const qpc = require('qpc')
@@ -63,7 +63,7 @@ qpc.consumer({
 ```
 
 
-### client.js example
+### `client.js` example
 
 ```js
 const qpc = require('qpc')
@@ -92,4 +92,4 @@ qpc.publisher({
 
 ## License
 
-MIT
+MIT © [Zoltan Kochan](https://www.kochan.io)
