@@ -7,7 +7,9 @@
   ],
   "version": "0.4.1",
   "author": {
-    "name": "Zoltan Kochan"
+    "name": "Zoltan Kochan",
+    "email": "zoltan.kochan@gmail.com",
+    "url": "http://kochan.io"
   },
   "files": [
     "index.js",
