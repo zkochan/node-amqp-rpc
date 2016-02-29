@@ -37,21 +37,17 @@ qpc.consumer({
   uri: 'amqp://guest:guest@localhost:5672',
 })
 .then(consumer => {
-  consumer.on('inc', function (param, cb) {
-    let prevVal = param
-    let nextVal = param + 2
-    cb(++param, prevVal, nextVal)
-  })
+  consumer.on('inc', (param, cb) => cb(++param, param, param + 2))
 
-  consumer.on('say.*', function (param, cb, inf) {
-    let arr = inf.cmd.split('.')
+  consumer.on('say.*', (param, cb, inf) => {
+    const arr = inf.cmd.split('.')
 
-    let name = (param && param.name) ? param.name : 'world'
+    const name = (param && param.name) ? param.name : 'world'
 
     cb(arr[1] + ' ' + name + '!')
   })
 
-  consumer.on('withoutCB', function (param, cb, inf) {
+  consumer.on('withoutCB', (param, cb, inf) => {
     if (cb) {
       cb('please run function without cb parameter')
       return
@@ -72,15 +68,15 @@ qpc.publisher({
   uri: 'amqp://guest:guest@localhost:5672',
 })
 .then(publisher => {
-  publisher.call('inc', 5, function () {
+  publisher.call('inc', 5, () => {
     console.log('results of inc:', arguments)  //output: [6,4,7]
   })
 
-  publisher.call('say.Hello', { name: 'John' }, function (msg) {
+  publisher.call('say.Hello', { name: 'John' }, msg => {
     console.log('results of say.Hello:', msg)  //output: Hello John!
   })
 
-  publisher.call('withoutCB', {}, function (msg) {
+  publisher.call('withoutCB', {}, msg => {
     console.log('withoutCB results:', msg)
     //output: please run function without cb parameter
   })
