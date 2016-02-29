@@ -28,11 +28,10 @@
     "url": "http://github.com/rpcjs/qpc/issues"
   },
   "main": "./index",
-  "licenses": "MIT",
+  "license": "MIT",
   "dependencies": {
     "amqp": "^0.2.4",
     "callback-store": "^1.0.0",
-    "debug": "^2.2.0",
     "node-uuid": "^1.4.7"
   },
   "homepage": "https://github.com/rpcjs/qpc",
