@@ -33,7 +33,6 @@
   "disallowOperatorBeforeLineBreak": ["."],
   "disallowParenthesesAroundArrowParam": true,
   "disallowVar": true,
-  "maximumNumberOfLines": 100,
 
   "requireAnonymousFunctions": {
     "allExcept": ["declarations"]
@@ -41,5 +40,19 @@
 
   "requireEarlyReturn": true,
   "requireSemicolons": false,
-  "disallowSemicolons": true
+  "disallowSemicolons": true,
+  "validateQuoteMarks": { "mark": "'", "escape": true },
+
+  "disallowSpacesInFunctionDeclaration": false,
+  "disallowSpacesInAnonymousFunctionExpression": false,
+  "disallowSpacesInFunctionExpression": false,
+  "requireSpacesInAnonymousFunctionExpression": {
+    "beforeOpeningRoundBrace": true,
+    "beforeOpeningCurlyBrace": true
+  },
+  "requireSpacesInFunctionDeclaration": {
+    "beforeOpeningRoundBrace": true,
+    "beforeOpeningCurlyBrace": true
+  },
+  "disallowSpaceAfterObjectKeys": { "allExcept": ["method"] }
 }

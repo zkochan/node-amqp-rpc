@@ -1,12 +1,15 @@
 'use strict'
+const describe = require('mocha').describe
+const it = require('mocha').it
+const beforeEach = require('mocha').beforeEach
 const expect = require('chai').expect
 const qpc = require('..')
 
-describe('qpc', function() {
+describe('qpc', function () {
   let con
   let pub
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     qpc.consumer({
       uri: 'amqp://guest:guest@localhost:5672',
       exchangeName: 'foo',
@@ -25,7 +28,7 @@ describe('qpc', function() {
     .catch(done)
   })
 
-  it('should send/recieve message', function(done) {
+  it('should send/recieve message', function (done) {
     con.on('foo', args => {
       expect(args[0]).to.eq(1)
       expect(args[1]).to.eq(2)
@@ -35,7 +38,7 @@ describe('qpc', function() {
     pub.call('foo', [1, 2])
   })
 
-  it('should send response', function(done) {
+  it('should send response', function (done) {
     con.on('sum', (args, cb) => cb(args[0] + args[1]))
 
     pub.call('sum', [1, 2], res => {
@@ -44,7 +47,7 @@ describe('qpc', function() {
     })
   })
 
-  it('should respond with an error in case of timout', function(done) {
+  it('should respond with an error in case of timout', function (done) {
     return qpc.publisher({
       url: 'amqp://guest:guest@localhost:5672',
       exchangeName: 'foo',
@@ -58,10 +61,10 @@ describe('qpc', function() {
     })
   })
 
-  it('should recieve message when subscribe after publish', function(done) {
+  it('should recieve message when subscribe after publish', function (done) {
     pub.call('foo2', [1, 2])
 
-    setTimeout(function() {
+    setTimeout(function () {
       con.on('foo2', args => {
         expect(args[0]).to.eq(1)
         expect(args[1]).to.eq(2)

@@ -1,18 +1,17 @@
 'use strict'
-
 const qpc = require('../..')
 
 let rpc = qpc({
   url: 'amqp://guest:guest@localhost:5672',
 })
 
-rpc.on('inc', function(param, cb) {
+rpc.on('inc', function (param, cb) {
   let prevVal = param
   let nextVal = param + 2
   cb(++param, prevVal, nextVal)
 })
 
-rpc.on('say.*', function(param, cb, inf) {
+rpc.on('say.*', function (param, cb, inf) {
   let arr = inf.cmd.split('.')
 
   let name = (param && param.name) ? param.name : 'world'
@@ -20,7 +19,7 @@ rpc.on('say.*', function(param, cb, inf) {
   cb(arr[1] + ' ' + name + '!')
 })
 
-rpc.on('withoutCB', function(param, cb, inf) {
+rpc.on('withoutCB', function (param, cb, inf) {
   if (cb) {
     cb('please run function without cb parameter')
     return
