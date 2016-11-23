@@ -34,7 +34,7 @@
   "dependencies": {
     "amqp": "^0.2.4",
     "callback-store": "^1.0.0",
-    "node-uuid": "^1.4.7"
+    "uuid": "^3.0.0"
   },
   "homepage": "https://github.com/rpcjs/qpc",
   "devDependencies": {
